@@ -1,0 +1,68 @@
+{
+    "runIt": "./test_bounce.py --file ../plans/geofence-2.plan --x 33.22022893 --y -86.30865367 --angle-deg 30 --angle-jitter 10",
+    "fileType": "Plan",
+    "geoFence": {
+        "breachReturn": [
+            33.22012284999387,
+            -86.3087649676821,
+            50
+        ],
+        "circles": [
+        ],
+        "polygons": [
+            {
+                "inclusion": true,
+                "polygon": [
+                    [
+                        33.2202827067441,
+                        -86.30877190703664
+                    ],
+                    [
+                        33.22028328264151,
+                        -86.30853548118432
+                    ],
+                    [
+                        33.220206591870685,
+                        -86.30853545004005
+                    ],
+                    [
+                        33.22017486672288,
+                        -86.30865364276336
+                    ],
+                    [
+                        33.22012309516665,
+                        -86.30871700968484
+                    ],
+                    [
+                        33.22015723663409,
+                        -86.30879040046945
+                    ]
+                ],
+                "version": 1
+            }
+        ],
+        "version": 2
+    },
+    "groundStation": "QGroundControl",
+    "mission": {
+        "cruiseSpeed": 15,
+        "firmwareType": 12,
+        "globalPlanAltitudeMode": 1,
+        "hoverSpeed": 5,
+        "items": [
+        ],
+        "plannedHomePosition": [
+            null,
+            null,
+            null
+        ],
+        "vehicleType": 10,
+        "version": 2
+    },
+    "rallyPoints": {
+        "points": [
+        ],
+        "version": 2
+    },
+    "version": 1
+}

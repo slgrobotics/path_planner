@@ -1093,6 +1093,44 @@ def save_path_to_kml(final_stitched_path_deg, output_file, output_prefix, revers
         # Or it could be another error during saving.
         print(f"Error saving KML/KMZ file: {e}")
 
+# =======================================
+#
+# sudo apt-get install python3-shapely python3-pyproj
+# pip3 install simplekml --break-system-packages
+# 
+# usage:
+#  path_planner.py [-h] [--output OUTPUT_KML_FILE] [--target TARGET_POLYGON_NAMES] [--angle ANGLE] \
+#                       [--sep SEP] [--reverse] [--ignore IGNORE_POLYGON_NAMES] [--safe SAFE] input_kml
+#
+# Generate a boustrophedon path for specified KML polygons, avoiding others as obstacles.
+#
+# positional arguments:
+#   input_kml             Path to the input KML file.
+#
+# options:
+#   -h, --help            show this help message and exit
+#   --output OUTPUT_KML_FILE
+#                         Path to the output KML file. If not specified, defaults to <input_kml_basename>_path.kml.
+#   --target TARGET_POLYGON_NAMES
+#                         Name of a polygon within the KML to generate paths for. Can be specified multiple times. If none specified, defaults to the largest polygon by area.
+#   --angle ANGLE         Compass angle for the path lines in degrees (0=N, 90=E, 180=S, 270=W). Default is 90.
+#   --sep SEP             Separation between path lines in meters. Default is 0.3.
+#   --reverse             Reverse the order of points in the final output path.
+#   --ignore IGNORE_POLYGON_NAMES
+#                         Name of a polygon within the KML to completely ignore. Can be specified multiple times.
+#   --safe SAFE           Safety distance in meters to keep away from target edges and obstacles. Default is 0.0.
+#
+# Example usage:
+#   ./path_planner.py --target "Field A" --ignore "Pond" --angle 90 --sep 0.3 --safe 0.5 input_map.kml
+#   cd ~/planner_ws/path_planner
+#   ./path_planner.py plans/test_1.kml
+#   ./path_planner.py plans/test_2.kml
+#   ./path_planner.py plans/test_2.kmz
+#   ./path_planner.py plans/test_2.kml --target GeoCage_1 --sep 0.1 --safe 0.5 --angle 45 --ignore Exclusion_1
+#   ./path_planner.py plans/test_2.kml --target GeoCage_1 --sep 0.1 --safe 0.5 --angle 45
+#
+# =======================================
+
 def main():
     parser = argparse.ArgumentParser(description='Generate a boustrophedon path for specified KML polygons, avoiding others as obstacles.')
     parser.add_argument('input_kml', help='Path to the input KML file.')
