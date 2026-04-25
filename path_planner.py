@@ -501,7 +501,16 @@ def main():
         reverse_final_path,
         target_polygons_with_names, # Pass targets with names
         obstacles_with_names        # Pass obstacles with names
-        )
+    )
+
+    # --- Save Results to QGC Plan format --- 
+    output_plan_file = os.path.splitext(output_kml_file)[0] + ".plan"
+    save_path_to_qgc_plan(
+        final_stitched_path_deg,
+        output_plan_file,
+        reverse_final_path,
+        altitude_m=20.0
+    )
 
     # --- Final Summary --- 
     print(f"\nProcessing complete.")
@@ -530,7 +539,8 @@ def main():
     else: 
         print("  No final path was generated.")
         
-    print(f"  Output KML saved to: {output_kml_file}") 
+    print(f"  Output KML saved to:  {output_kml_file}") 
+    print(f"  Output Plan saved to: {output_plan_file}")
 
 
 if __name__ == "__main__":

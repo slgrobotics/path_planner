@@ -103,10 +103,111 @@ def read_qgc_plan_polygons(plan_file):
     return all_polygons_data
 
 
-def save_path_to_qgc_plan(path_points, output_file):
+def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude_m=20.0):
     """
-    Save a list of (lon, lat) points to a QGC Plan file.
-    """
-    print(f"Saving path to QGC Plan file: {output_file}")
+    Save a list of (lon, lat) points to a QGroundControl .plan file.
     
-    print(f"Path saved to {output_file}")
+    Args:
+        path_points: List of (lon, lat) tuples or a Shapely LineString.
+        output_file: Path to the output .plan file.
+        reverse_path: If True, reverse the order of points.
+        altitude_m: Altitude in meters for waypoints. Default is 20.0.
+    """
+    from shapely.geometry import LineString
+    
+    # Extract coordinates from various input types
+    if path_points is None:
+        print("No path points provided. .plan file not saved.")
+        return False
+    
+    # Handle LineString input
+    if isinstance(path_points, LineString):
+        coords_list = list(path_points.coords)
+    elif isinstance(path_points, (list, tuple)):
+        coords_list = list(path_points)
+    else:
+        print(f"Invalid path_points type: {type(path_points)}")
+        return False
+    
+    if not coords_list or len(coords_list) < 2:
+        print("Path has fewer than 2 points. .plan file not saved.")
+        return False
+    
+    if reverse_path:
+        print("Reversing final path points before saving to .plan.")
+        coords_list = list(reversed(coords_list))
+    
+    # Build mission items (waypoints)
+    items = []
+    do_jump_id = 1
+    
+    # First item: QGC visual waypoint (command 530) - marks start of survey
+    items.append({
+        "autoContinue": True,
+        "command": 530,
+        "doJumpId": do_jump_id,
+        "frame": 2,
+        "params": [0, 2, None, None, None, None, None],
+        "type": "SimpleItem"
+    })
+    do_jump_id += 1
+    
+    # Home position (takeoff location) - use first waypoint position
+    first_lon, first_lat = coords_list[0]
+    items.append({
+        "AMSLAltAboveTerrain": altitude_m,
+        "Altitude": altitude_m,
+        "AltitudeMode": 1,
+        "autoContinue": True,
+        "command": 16,
+        "doJumpId": do_jump_id,
+        "frame": 3,
+        "params": [0, 0, 0, None, first_lat, first_lon, altitude_m],
+        "type": "SimpleItem"
+    })
+    do_jump_id += 1
+    
+    # Waypoints for the path
+    for lon, lat in coords_list:
+        items.append({
+            "autoContinue": True,
+            "command": 16,
+            "doJumpId": do_jump_id,
+            "frame": 3,
+            "params": [0, 0, 0, None, lat, lon, altitude_m],
+            "type": "SimpleItem"
+        })
+        do_jump_id += 1
+    
+    # Build the plan JSON
+    plan_data = {
+        "fileType": "Plan",
+        "geoFence": {
+            "circles": [],
+            "polygons": [],
+            "version": 2
+        },
+        "groundStation": "QGroundControl",
+        "mission": {
+            "cruiseSpeed": 1.3,
+            "firmwareType": 12,
+            "globalPlanAltitudeMode": 1,
+            "hoverSpeed": 5,
+            "items": items,
+            "plannedHomePosition": [None, None, None],
+            "vehicleType": 10,
+            "version": 2
+        },
+        "rallyPoints": {
+            "points": [],
+            "version": 2
+        },
+        "version": 1
+    }
+    
+    # Save to file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(plan_data, f, indent=4)
+    
+    return True
+
