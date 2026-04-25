@@ -19,7 +19,8 @@ from shapely.affinity import rotate
 import pyproj
 import os # Needed for path manipulation
 
-from helpers.kml import (read_kml_polygons, save_path_to_kml)
+from helpers.kml_format import (read_kml_polygons, save_path_to_kml)
+from helpers.qgc_format import (read_qgc_plan_polygons, save_path_to_qgc_plan)
 from helpers.path_math import (generate_boustrophedon_path, split_path_by_obstacles, _find_intersection_points)
 
 from helpers.stitching import (order_tracks_along_path, stitch_path_segments_proj)
@@ -35,42 +36,46 @@ TOLERANCE = 1e-9  # Tolerance for floating point comparisons
 # 
 # usage:
 #  path_planner.py [-h] [--output OUTPUT_KML_FILE] [--target TARGET_POLYGON_NAMES] [--angle ANGLE] \
-#                       [--sep SEP] [--reverse] [--ignore IGNORE_POLYGON_NAMES] [--safe SAFE] input_kml
+#                       [--sep SEP] [--reverse] [--ignore IGNORE_POLYGON_NAMES] [--safe SAFE] input_file
 #
 # Generate a boustrophedon path for specified KML polygons, avoiding others as obstacles.
 #
 # positional arguments:
-#   input_kml             Path to the input KML file.
+#   input_file          Path to the input KML/KMZ or QGC Plan file.
 #
 # options:
 #   -h, --help            show this help message and exit
 #   --output OUTPUT_KML_FILE
-#                         Path to the output KML file. If not specified, defaults to <input_kml_basename>_path.kml.
+#                         Path to the output KML file. If not specified, defaults to <input_file_basename>_path.kml.
 #   --target TARGET_POLYGON_NAMES
-#                         Name of a polygon within the KML to generate paths for. Can be specified multiple times. If none specified, defaults to the largest polygon by area.
+#                         Name of a polygon within the file to generate paths for. Can be specified multiple times. If none specified, defaults to the largest polygon by area.
 #   --angle ANGLE         Compass angle for the path lines in degrees (0=N, 90=E, 180=S, 270=W). Default is 90.
 #   --sep SEP             Separation between path lines in meters. Default is 0.3.
 #   --reverse             Reverse the order of points in the final output path.
 #   --ignore IGNORE_POLYGON_NAMES
-#                         Name of a polygon within the KML to completely ignore. Can be specified multiple times.
+#                         Name of a polygon within the file to completely ignore. Can be specified multiple times.
 #   --safe SAFE           Safety distance in meters to keep away from target edges and obstacles. Default is 0.0.
 #
 # Example usage:
 #   ./path_planner.py --target "Field A" --ignore "Pond" --angle 90 --sep 0.3 --safe 0.5 input_map.kml
+#   ./path_planner.py --target "Field A" --ignore "Pond" --angle 90 --sep 0.3 --safe 0.5 input_map.plan
 #   cd ~/planner_ws/path_planner
 #   ./path_planner.py plans/test_1.kml
 #   ./path_planner.py plans/test_2.kml
 #   ./path_planner.py plans/test_2.kmz
 #   ./path_planner.py plans/test_2.kml --target GeoCage_1 --sep 0.1 --safe 0.5 --angle 45 --ignore Exclusion_1
 #   ./path_planner.py plans/test_2.kml --target GeoCage_1 --sep 0.1 --safe 0.5 --angle 45
+#   ./path_planner.py plans/geofence_qgroundcontrol.plan
+#   ./path_planner.py plans/geofence_qgroundcontrol_multi.plan
+#   ./path_planner.py plans/geofence_qgroundcontrol_multi2.plan --sep 0.4 --safe 0.5 --angle 45
 #
 # =======================================
 
 def main():
-    parser = argparse.ArgumentParser(description='Generate a boustrophedon path for specified KML polygons, avoiding others as obstacles.')
-    parser.add_argument('input_kml', help='Path to the input KML file.')
+    parser = argparse.ArgumentParser(description='Generate a boustrophedon path for specified KML/KMZ or QGC Plan polygons, avoiding others as obstacles.')
+    parser.add_argument('input_file', help='Path to the input KML/KMZ or QGC Plan file.')
     parser.add_argument('--output', dest='output_kml_file', default=None,
-                        help='Path to the output KML file. If not specified, defaults to <input_kml_basename>_path.kml.')
+                        help='Path to the output KML file. If not specified, defaults to <input_file_basename>_path.kml.')
     parser.add_argument('--target', dest='target_polygon_names', action='append', default=[],
                         help='Name of a polygon within the KML to generate paths for. Can be specified multiple times. If none specified, defaults to the largest polygon by area.')
     parser.add_argument('--angle', type=float, default=90.0, 
@@ -84,22 +89,22 @@ def main():
     parser.add_argument('--safe', type=float, default=0.0,
                         help='Safety distance in meters to keep away from target edges and obstacles. Default is 0.0.')
 
-    # --- Check for missing arguments (only input_kml is mandatory now) ---
+    # --- Check for missing arguments (only input_file is mandatory now) ---
     # This check might need refinement if other args become mandatory again
     # Check if only script name is passed or help flag
     if len(sys.argv) == 1 or (len(sys.argv) >= 2 and sys.argv[1] in ('-h', '--help')):
         parser.print_help(sys.stderr)
         sys.exit(1)
-    # Check if the first argument exists (likely the input KML)
+    # Check if the first argument exists (likely the input file)
     # This prevents running parsing if the main input is missing
     elif len(sys.argv) >= 2 and not sys.argv[1].startswith('-') and not os.path.exists(sys.argv[1]):
          # Basic check if the first argument looks like a file that doesn't exist
-         print(f"Error: Input KML file not found: {sys.argv[1]}")
+         print(f"Error: Input file not found: {sys.argv[1]}")
          sys.exit(1)
 
     args = parser.parse_args()
 
-    input_kml = args.input_kml
+    input_file = args.input_file
     target_polygon_names_arg = args.target_polygon_names 
     ignore_polygon_names_arg = args.ignore_polygon_names # Get the ignored names
     angle_degrees = args.angle
@@ -111,20 +116,25 @@ def main():
     if args.output_kml_file:
         output_kml_file = args.output_kml_file
     else:
-        input_basename = os.path.splitext(os.path.basename(input_kml))[0]
+        input_basename = os.path.splitext(os.path.basename(input_file))[0]
         output_kml_file = f"{input_basename}_path.kml"
         
     # --- Determine Output Prefix for KML track name --- 
     output_prefix = os.path.splitext(os.path.basename(output_kml_file))[0]
 
-    print(f"Input KML: {input_kml}")
+    print(f"Input File: {input_file}")
     print(f"Output KML: {output_kml_file}")
     print(f"Internal KML Track Name: {output_prefix}") 
     print(f"Path Angle: {angle_degrees} degrees")
     print(f"Path Separation: {separation_in_meters} meters")
     print(f"Safety Distance: {safety_distance} meters")
 
-    all_polygons_data = read_kml_polygons(input_kml) 
+    # --- Detect file type and read polygons accordingly ---
+    input_lower = input_file.lower()
+    if input_lower.endswith('.plan'):
+        all_polygons_data = read_qgc_plan_polygons(input_file)
+    else:
+        all_polygons_data = read_kml_polygons(input_file) 
     
     # --- Filter out ignored polygons FIRST --- 
     ignore_names_set = set(ignore_polygon_names_arg) # Use a set for faster lookup

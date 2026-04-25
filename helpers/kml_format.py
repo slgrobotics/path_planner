@@ -6,6 +6,9 @@ import zipfile # Needed for KMZ
 
 TOLERANCE = 1e-9  # Tolerance for floating point comparisons
 
+#
+# KML/KMZ file format handling
+#
 
 def read_kml_polygons(kml_file):
     """
