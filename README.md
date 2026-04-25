@@ -1,4 +1,4 @@
-> This is a modified version of the original *Path Planner* by Peter Lehnér.
+> This is a modified version of the [original](https://github.com/swepet/path_planner) *Path Planner* by Peter Lehnér.
 >
 > This version is able to load *".plan"* files created in [QGroundControl](https://qgroundcontrol.com/), and also outputs paths in QGC format (named "*_path.plan")
 >
