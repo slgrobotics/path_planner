@@ -4,19 +4,16 @@
 # Convert a QGroundControl mission path to a geofence polygon.
 #
 # This script takes a QGroundControl .plan file containing a mission (waypoints)
-# and converts it to a geofence plan file by creating a polygon that encompasses
-# the mission path.
-#
-# Basically, you can "feel" the area boundary by creating a mission around it and
-# create a geofence from that mission file.
-#
-# The script computes a bounding box around the waypoints and optionally adds
-# padding to ensure the geofence fully contains the mission path.
+# and converts it to a geofence plan file.
+# The script converts mission waypoints to a geofence polygon corners.
 # The resulting geofence can be used for inclusion (allowed area) or
-# exclusion (no-fly zone) depending on the user's choice.
+# exclusion (no-fly zone) depending on the user's choice ("-e" argument).
+#
+# Basically, you can "feel" the area boundary by creating a mission around it
+# and create a geofence from that mission file.
 #
 # Usage:
-#   python mission_to_geofence.py input_mission.plan -o output_geofence.plan -p 0.0001 -e
+#   python mission_to_geofence.py input_mission.plan -o output_geofence.plan [-e]
 #
 # ===============================================================================
 
@@ -46,80 +43,25 @@ def load_mission_plan(plan_path: str) -> dict:
     return waypoints
 
 
-def compute_bounding_box(waypoints: List[Tuple[float, float]], 
-                         padding_deg: float = 0.0001) -> List[Tuple[float, float]]:
-    """
-    Compute a bounding box polygon around waypoints with optional padding.
-    
-    Args:
-        waypoints: List of (latitude, longitude) tuples
-        padding_deg: Padding in degrees to add around the waypoints
-        
-    Returns:
-        List of (lat, lon) tuples forming a rectangle polygon
-    """
-    if not waypoints:
-        return []
-    
-    lats = [wp[0] for wp in waypoints]
-    lons = [wp[1] for wp in waypoints]
-    
-    min_lat = min(lats) - padding_deg
-    max_lat = max(lats) + padding_deg
-    min_lon = min(lons) - padding_deg
-    max_lon = max(lons) + padding_deg
-    
-    # Create polygon in clockwise order
-    polygon = [
-        (max_lat, min_lon),  # top-left
-        (max_lat, max_lon),  # top-right
-        (min_lat, max_lon),  # bottom-right
-        (min_lat, min_lon),  # bottom-left
-    ]
-    
-    return polygon
-
-
-def compute_convex_hull(waypoints: List[Tuple[float, float]], 
-                        padding_deg: float = 0.00005) -> List[Tuple[float, float]]:
-    """
-    Compute a convex hull polygon around waypoints with optional padding.
-    
-    Uses a simple approach: compute bounding box, then optionally add padding.
-    For more complex hulls, consider using scipy.spatial.ConvexHull.
-    
-    Args:
-        waypoints: List of (latitude, longitude) tuples
-        padding_deg: Padding in degrees to add around the waypoints
-        
-    Returns:
-        List of (lat, lon) tuples forming a convex polygon
-    """
-    if not waypoints:
-        return []
-    
-    if len(waypoints) <= 2:
-        # For 1-2 points, return a small bounding box
-        return compute_bounding_box(waypoints, padding_deg)
-    
-    # Use bounding box approach for simplicity
-    return compute_bounding_box(waypoints, padding_deg)
-
-
 def create_geofence_plan(waypoints: List[Tuple[float, float]], 
                          output_path: str,
-                         padding_deg: float = 0.00005,
                          inclusion: bool = True) -> None:
     """
     Create a geofence plan file from waypoints.
     
+    Uses the mission waypoints directly as geofence polygon vertices.
+    
     Args:
         waypoints: List of (latitude, longitude) tuples from mission
         output_path: Path to save the output geofence plan
-        padding_deg: Padding in degrees around the waypoints
         inclusion: If True, polygon is inclusion zone; if False, exclusion zone
     """
-    polygon = compute_bounding_box(waypoints, padding_deg)
+    if not waypoints:
+        print("Error: No waypoints to convert")
+        return
+    
+    # Use waypoints directly as polygon vertices (no bounding box, no padding)
+    polygon = [[lat, lon] for lat, lon in waypoints]
     
     geofence_plan = {
         "fileType": "Plan",
@@ -173,8 +115,6 @@ def main():
                         help='Path to input .plan file with mission waypoints')
     parser.add_argument('-o', '--output', 
                         help='Output geofence plan path (default: input_geofence.plan)')
-    parser.add_argument('-p', '--padding', type=float, default=0.00005,
-                        help='Padding in degrees around waypoints (default: 0.00005)')
     parser.add_argument('-e', '--exclusion', action='store_true',
                         help='Create exclusion zone instead of inclusion zone')
     
@@ -206,7 +146,6 @@ def main():
     create_geofence_plan(
         waypoints, 
         output_path, 
-        args.padding,
         inclusion=not args.exclusion
     )
     
