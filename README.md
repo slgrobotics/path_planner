@@ -44,6 +44,46 @@ or [Google MyMaps](https://www.google.com/maps/d/) to display or create *".kml"*
 `./path_planner.py plans/geofence_qgroundcontrol_multi2.plan --target GeoCage_1 --sep 0.4 --safe 0.5 --angle 45`
 <img width="1449" height="868" alt="Screenshot from 2026-04-24 21-04-45" src="https://github.com/user-attachments/assets/ab90251e-be44-4049-bdef-2f86a7e42c64" />
 
+## Missions and Geofence Converters
+
+There are two converter scripts to assist with "lawn mowing mission" planning. The typical workflow is as follows:
+
+- Use *[QGroundControl](https://qgroundcontrol.com/)* to plan a mission that traces the perimeter of your mowing area. Test it live and adjust as needed.
+- Run `mission_to_geofence.py` to convert the mission into a geofence polygon.
+- Optionally, use *QGroundControl* to edit the Fence:
+  - add exclusion areas (polygons and circles)
+  - **Tip:** position the robot near obstacles for better accuracy, as *QGroundControl* displays it live on the plan
+- Run `path_planner.py` to generate the final *“scan pattern”* mission file.
+
+#### mission_to_geofence.py
+
+Convert a *QGroundControl* mission path into a geofence polygon.
+
+This script takes a *QGroundControl* `.plan` file containing a mission (waypoints) and converts it into a geofence plan file.
+
+The script transforms mission waypoints into polygon corners. The resulting geofence can be used either as:
+- an inclusion zone (allowed area), or
+- an exclusion zone (no-fly / no-go area), depending on the *"-e"* argument.
+
+In practice, you can “trace” the boundary of an area by creating a mission around it and then converting that mission into a geofence.
+
+Usage:
+```
+python mission_to_geofence.py input_mission.plan -o output_geofence.plan [-e]
+```
+
+#### geofence_to_mission.py
+
+Convert a *QGroundControl* geofence polygon into a mission path.
+
+This script takes a *QGroundControl* `.plan` file containing a geofence polygon and converts it into a mission plan by generating waypoints at the polygon corners.
+
+The resulting mission can be used to “trace” or verify the boundary of a geofence area.
+
+Usage:
+```
+python geofence_to_mission.py input_geofence.plan -o output_mission.plan [-a ALTITUDE]
+```
 
 ------------------
 
