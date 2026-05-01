@@ -11,7 +11,7 @@ TOLERANCE = 1e-9  # Tolerance for floating point comparisons
 # QGroundControl .plan file format handling
 #
 
-def read_qgc_plan_polygons(plan_file):
+def read_qgc_plan_polygons(plan_file, num_segments=8):
     """
     Read polygons from a QGroundControl .plan file.
     Returns a list of tuples, where each tuple is (name, polygon_geometry).
@@ -82,9 +82,8 @@ def read_qgc_plan_polygons(plan_file):
         lat, lon = float(center[0]), float(center[1])
         radius_m = float(radius)
         
-        # Approximate circle as a polygon with 64 segments
+        # Approximate circle as a polygon with configurable segments
         from math import radians, sin, cos
-        num_segments = 64
         circle_points = []
         for j in range(num_segments):
             angle = 2 * 3.14159 * j / num_segments

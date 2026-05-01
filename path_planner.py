@@ -88,6 +88,8 @@ def main():
                         help='Name of a polygon within the KML to completely ignore. Can be specified multiple times.')
     parser.add_argument('--safe', type=float, default=0.0,
                         help='Safety distance in meters to keep away from target edges and obstacles. Default is 0.0.')
+    parser.add_argument('--segments', type=int, default=8,
+                        help='Number of segments for approximating circles in QGC Plan files. Default is 8.')
 
     # --- Check for missing arguments (only input_file is mandatory now) ---
     # This check might need refinement if other args become mandatory again
@@ -111,6 +113,7 @@ def main():
     separation_in_meters = args.sep
     reverse_final_path = args.reverse 
     safety_distance = args.safe # Get the safety distance
+    num_segments = args.segments
 
     # --- Determine Output KML filename --- 
     if args.output_kml_file:
@@ -132,7 +135,7 @@ def main():
     # --- Detect file type and read polygons accordingly ---
     input_lower = input_file.lower()
     if input_lower.endswith('.plan'):
-        all_polygons_data = read_qgc_plan_polygons(input_file)
+        all_polygons_data = read_qgc_plan_polygons(input_file, num_segments)
     else:
         all_polygons_data = read_kml_polygons(input_file) 
     
