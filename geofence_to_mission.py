@@ -11,8 +11,10 @@
 # geofence area.
 #
 # Usage:
-#   python geofence_to_mission.py input_geofence.plan -o output_mission.plan [-a ALTITUDE]
+#   python3 geofence_to_mission.py input_geofence.plan [-o output_mission.plan] [-a ALTITUDE]
 #
+# Created by: VS Code Copilot (Free, Claude Haiku 4.5)
+# Date: 20246-04-28
 # ===============================================================================
 
 import json

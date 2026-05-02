@@ -9,8 +9,10 @@
 # surveyed area.
 #
 # Usage:
-#   python scan_to_geofence.py input_mission.plan -o output_geofence.plan
+#   python3 scan_to_geofence.py input_mission.plan [-o output_geofence.plan]
 #
+# Created by: VS Code Copilot (Free, Claude Haiku 4.5)
+# Date: 20246-05-02
 # ===============================================================================
 
 import json
