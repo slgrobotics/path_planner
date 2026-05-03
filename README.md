@@ -49,6 +49,7 @@ or [Google MyMaps](https://www.google.com/maps/d/) to display or create *".kml"*
 There are two converter scripts to assist with "lawn mowing mission" planning. The typical workflow is as follows:
 
 - Use *[QGroundControl](https://qgroundcontrol.com/)* to plan a mission that traces the perimeter of your mowing area. Test it live and adjust as needed.
+Alternatively, run `ulg_to_mission.py` to convert a PX4 `.ulg` log file to a mission `.plan` file. 
 - Run `mission_to_geofence.py` to convert the mission into a geofence polygon.
 - Optionally, use *QGroundControl* to edit the Fence:
   - add exclusion areas (polygons and circles)
@@ -69,7 +70,7 @@ In practice, you can “trace” the boundary of an area by creating a mission a
 
 Usage:
 ```
-python mission_to_geofence.py input_mission.plan -o output_geofence.plan [-e]
+python mission_to_geofence.py input_mission.plan [-o output_geofence.plan] [-e]
 ```
 
 #### geofence_to_mission.py
@@ -82,7 +83,7 @@ The resulting mission can be used to “trace” or verify the boundary of a geo
 
 Usage:
 ```
-python geofence_to_mission.py input_geofence.plan -o output_mission.plan [-a ALTITUDE]
+python geofence_to_mission.py input_geofence.plan [-o output_mission.plan] [-a ALTITUDE]
 ```
 
 #### ulg_to_mission.py
@@ -93,7 +94,7 @@ This script extracts GPS positions from a PX4 `.ulg` log and creates a `.plan` m
 
 Usage:
 ```
-python ulg_to_mission.py input_log.ulg -o output_mission.plan --step 2.0 --cruise-speed 1.5 [-a ALTITUDE]
+python ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 1.0] [--cruise-speed 1.3] [-a 20.0]
 ```
 
 ------------------
