@@ -14,7 +14,7 @@
 **Install prerequisites:**
 ```
 sudo apt-get install python3-shapely python3-pyproj
-pip3 install simplekml --break-system-packages
+pip3 install simplekml pyulog --break-system-packages
 ```
 
 **Clone:**
@@ -70,7 +70,7 @@ In practice, you can “trace” the boundary of an area by creating a mission a
 
 Usage:
 ```
-python mission_to_geofence.py input_mission.plan [-o output_geofence.plan] [-e]
+~/planner_ws/path_planner/mission_to_geofence.py input_mission.plan [-o output_geofence.plan] [-e]
 ```
 
 #### geofence_to_mission.py
@@ -83,7 +83,7 @@ The resulting mission can be used to “trace” or verify the boundary of a geo
 
 Usage:
 ```
-python geofence_to_mission.py input_geofence.plan [-o output_mission.plan] [-a ALTITUDE]
+~/planner_ws/path_planner/geofence_to_mission.py input_geofence.plan [-o output_mission.plan] [-a ALTITUDE]
 ```
 
 #### ulg_to_mission.py
@@ -94,7 +94,7 @@ This script extracts GPS positions from a PX4 `.ulg` log and creates a `.plan` m
 
 Usage:
 ```
-python ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 1.0] [--cruise-speed 1.3] [-a 20.0]
+~/planner_ws/path_planner/ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 1.0] [--cruise-speed 1.3] [-a 20.0]
 ```
 
 ------------------
