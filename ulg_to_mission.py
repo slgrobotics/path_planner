@@ -8,7 +8,7 @@
 # "--step" distance are ignored to reduce waypoint density.
 #
 # Usage:
-#   python3 ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 2.0] [-a ALTITUDE]
+#   python3 ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 2.0] [-a ALTITUDE] [-s CRUISESPEED]
 #
 # Created by: GitHub Copilot
 # Date: 2026-05-03
@@ -125,13 +125,13 @@ def filter_points(points: Sequence[Tuple[float, float, Optional[float]]], step_m
     return filtered
 
 
-def save_ulg_mission(points: Sequence[Tuple[float, float, Optional[float]]], output_path: str, altitude: float) -> None:
+def save_ulg_mission(points: Sequence[Tuple[float, float, Optional[float]]], output_path: str, altitude: float, cruise_speed: float) -> None:
     """Write the filtered GPS points into a QGroundControl mission plan."""
     if len(points) < 2:
         raise ValueError('At least two GPS points are required to generate a mission.')
 
     lon_lat_points = [(lon, lat) for lat, lon, _ in points]
-    saved = save_path_to_qgc_plan(lon_lat_points, output_path, altitude_m=altitude)
+    saved = save_path_to_qgc_plan(lon_lat_points, output_path, altitude_m=altitude, cruise_speed=cruise_speed)
     if not saved:
         raise RuntimeError('Failed to save QGroundControl mission plan.')
 
@@ -145,10 +145,12 @@ def main() -> int:
     )
     parser.add_argument('input_ulg', help='Path to input PX4 .ulg file')
     parser.add_argument('-o', '--output', help='Output .plan mission file (default: <input>_mission.plan)')
-    parser.add_argument('--step', type=float, default=0.0,
-                        help='Minimum distance in meters between consecutive waypoints (default: 0.0)')
+    parser.add_argument('--step', type=float, default=1.0,
+                        help='Minimum distance in meters between consecutive waypoints (default: 1.0)')
     parser.add_argument('-a', '--altitude', type=float, default=20.0,
                         help='Mission waypoint altitude in meters (default: 20.0)')
+    parser.add_argument('-s', '--cruise-speed', type=float, default=1.3,
+                        help='Mission cruise speed in m/s (default: 1.3)')
     parser.add_argument('--source', choices=[s[0] for s in GPS_SOURCES],
                         help='Preferred GPS data source inside the ULog file')
     args = parser.parse_args()
@@ -166,7 +168,7 @@ def main() -> int:
         if len(filtered) < 2:
             print('Error: Filtered waypoint set contains fewer than 2 points.')
             return 1
-        save_ulg_mission(filtered, output_path, args.altitude)
+        save_ulg_mission(filtered, output_path, args.altitude, args.cruise_speed)
     except Exception as exc:
         print('Error:', exc)
         return 1

@@ -102,7 +102,7 @@ def read_qgc_plan_polygons(plan_file, num_segments=8):
     return all_polygons_data
 
 
-def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude_m=20.0):
+def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude_m=20.0, cruise_speed=1.3):
     """
     Save a list of (lon, lat) points to a QGroundControl .plan file.
     
@@ -111,6 +111,7 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
         output_file: Path to the output .plan file.
         reverse_path: If True, reverse the order of points.
         altitude_m: Altitude in meters for waypoints. Default is 20.0.
+        cruise_speed: Cruise speed in m/s for the mission. Default is 1.3.
     """
     from shapely.geometry import LineString
     
@@ -188,7 +189,7 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
         },
         "groundStation": "QGroundControl",
         "mission": {
-            "cruiseSpeed": 1.3,
+            "cruiseSpeed": cruise_speed,
             "firmwareType": 12,
             "globalPlanAltitudeMode": 1,
             "hoverSpeed": 5,
