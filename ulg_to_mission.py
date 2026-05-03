@@ -130,12 +130,19 @@ def save_ulg_mission(points: Sequence[Tuple[float, float, Optional[float]]], out
     if len(points) < 2:
         raise ValueError('At least two GPS points are required to generate a mission.')
 
-    lon_lat_points = [(lon, lat) for lat, lon, _ in points]
-    saved = save_path_to_qgc_plan(lon_lat_points, output_path, altitude_m=altitude, cruise_speed=cruise_speed)
+    # Extract home position from first point and mission waypoints from remaining points
+    home_lat, home_lon, _ = points[0]
+    planned_home = (home_lat, home_lon)
+    
+    # Convert remaining points to lon, lat format for the mission
+    lon_lat_points = [(lon, lat) for lat, lon, _ in points[1:]]
+    
+    saved = save_path_to_qgc_plan(lon_lat_points, output_path, altitude_m=altitude, cruise_speed=cruise_speed, planned_home_position=planned_home)
     if not saved:
         raise RuntimeError('Failed to save QGroundControl mission plan.')
 
     print(f'Mission saved: {output_path}')
+    print(f'Home position: lat={home_lat:.6f}, lon={home_lon:.6f}')
     print(f'Waypoints written: {len(lon_lat_points)}')
 
 

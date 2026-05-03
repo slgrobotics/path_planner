@@ -102,7 +102,7 @@ def read_qgc_plan_polygons(plan_file, num_segments=8):
     return all_polygons_data
 
 
-def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude_m=20.0, cruise_speed=1.3):
+def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude_m=20.0, cruise_speed=1.3, planned_home_position=None):
     """
     Save a list of (lon, lat) points to a QGroundControl .plan file.
     
@@ -112,6 +112,7 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
         reverse_path: If True, reverse the order of points.
         altitude_m: Altitude in meters for waypoints. Default is 20.0.
         cruise_speed: Cruise speed in m/s for the mission. Default is 1.3.
+        planned_home_position: Tuple of (lat, lon) for the home position. If None, uses first waypoint.
     """
     from shapely.geometry import LineString
     
@@ -152,8 +153,17 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
     })
     do_jump_id += 1
     
-    # Home position (takeoff location) - use first waypoint position
-    first_lon, first_lat = coords_list[0]
+    # Determine home position and waypoints
+    if planned_home_position is not None:
+        home_lat, home_lon = planned_home_position
+        mission_coords = coords_list
+    else:
+        # Use first point as home, mission starts from second point
+        first_lon, first_lat = coords_list[0]
+        home_lat, home_lon = first_lat, first_lon
+        mission_coords = coords_list[1:] if len(coords_list) > 1 else coords_list
+    
+    # Add home position (takeoff location) as first waypoint
     items.append({
         "AMSLAltAboveTerrain": altitude_m,
         "Altitude": altitude_m,
@@ -162,13 +172,13 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
         "command": 16,
         "doJumpId": do_jump_id,
         "frame": 3,
-        "params": [0, 0, 0, None, first_lat, first_lon, altitude_m],
+        "params": [0, 0, 0, None, home_lat, home_lon, altitude_m],
         "type": "SimpleItem"
     })
     do_jump_id += 1
     
-    # Waypoints for the path
-    for lon, lat in coords_list:
+    # Waypoints for the path (starting from second point if no explicit home provided)
+    for lon, lat in mission_coords:
         items.append({
             "autoContinue": True,
             "command": 16,
@@ -194,7 +204,7 @@ def save_path_to_qgc_plan(path_points, output_file, reverse_path=False, altitude
             "globalPlanAltitudeMode": 1,
             "hoverSpeed": 5,
             "items": items,
-            "plannedHomePosition": [None, None, None],
+            "plannedHomePosition": [home_lat, home_lon, altitude_m],
             "vehicleType": 10,
             "version": 2
         },
