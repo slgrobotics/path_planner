@@ -85,6 +85,17 @@ Usage:
 python geofence_to_mission.py input_geofence.plan -o output_mission.plan [-a ALTITUDE]
 ```
 
+#### ulg_to_mission.py
+
+Convert a PX4 `.ulg` log file into a *QGroundControl* mission plan.
+
+This script extracts GPS positions from a PX4 `.ulg` log and creates a `.plan` mission file. It filters out points that are closer than the provided `--step` distance to reduce waypoint density.
+
+Usage:
+```
+python ulg_to_mission.py input_log.ulg -o output_mission.plan --step 2.0 [-a ALTITUDE]
+```
+
 ------------------
 
 Below is the original README:
