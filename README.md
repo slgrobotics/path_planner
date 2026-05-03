@@ -93,7 +93,7 @@ This script extracts GPS positions from a PX4 `.ulg` log and creates a `.plan` m
 
 Usage:
 ```
-python ulg_to_mission.py input_log.ulg -o output_mission.plan --step 2.0 [-a ALTITUDE]
+python ulg_to_mission.py input_log.ulg -o output_mission.plan --step 2.0 --cruise-speed 1.5 [-a ALTITUDE]
 ```
 
 ------------------
