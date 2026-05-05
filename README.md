@@ -17,6 +17,11 @@ sudo apt-get install python3-shapely python3-pyproj
 pip3 install simplekml pyulog --break-system-packages
 ```
 
+If you intend to use `plan_to_drone.py` install MAVSDK:
+```
+pip3 install mavsdk --break-system-packages
+```
+
 **Clone:**
 ```
 mkdir ~/planner_ws
@@ -44,7 +49,7 @@ or [Google MyMaps](https://www.google.com/maps/d/) to display or create *".kml"*
 `./path_planner.py plans/geofence_qgroundcontrol_multi2.plan --target GeoCage_1 --sep 0.4 --safe 0.5 --angle 45`
 <img width="1449" height="868" alt="Screenshot from 2026-04-24 21-04-45" src="https://github.com/user-attachments/assets/ab90251e-be44-4049-bdef-2f86a7e42c64" />
 
-## Missions and Geofence Converters
+## Utilities: Missions and Geofence Converters
 
 There are two converter scripts to assist with "lawn mowing mission" planning. The typical workflow is as follows:
 
@@ -95,6 +100,68 @@ This script extracts GPS positions from a PX4 `.ulg` log and creates a `.plan` m
 Usage:
 ```
 ~/planner_ws/path_planner/ulg_to_mission.py input_log.ulg [-o output_mission.plan] [--step 1.0] [--cruise-speed 1.3] [-a 20.0]
+```
+
+#### combine_plans.py
+
+Combine multiple *QGroundControl*  `.plan` files into a single `.plan` output.
+Use this script to overlay multiple QGC files and, for example, verify that your robot's paths comply with geofences.
+
+This script merges mission items, geofence polygons, geofence circles, and rally
+points from multiple *QGroundControl* `.plan` files into a single combined plan.
+
+Usage:
+```
+python3 combine_plans.py -o combined.plan input1.plan input2.plan ...
+```
+
+#### flatten_plan.py
+
+Flatten *TransectStyleComplexItem* (survey) entries in *QGroundControl* `.plan` files.
+
+The script will replace any item that contains a *TransectStyleComplexItem* (or
+*ComplexItem* of type 'survey') with that complex item's inner `Items` list,
+preserving order. By default it will renumber `doJumpId` sequentially.
+
+Usage examples:
+```
+python3 flatten_plan.py input.plan -o output.plan
+python3 flatten_plan.py input.plan --inplace --backup
+python3 flatten_plan.py input.plan --dry-run
+python3 flatten_plan.py front-east.plan --mode clean -o front-east.flattened.plan
+```
+
+#### scan_to_geofence.py
+
+Convert a *QGroundControl* survey mission to a geofence inclusion zone.
+
+This script takes a *QGroundControl* `.plan` file containing a survey mission
+and creates a geofence inclusion zone based on the convex hull of the mission
+waypoints. The convex hull represents the approximate outer boundary of the
+surveyed area.
+
+Usage:
+```
+python3 scan_to_geofence.py input_mission.plan [-o output_geofence.plan]
+```
+
+#### plan_to_drone.py
+
+Upload a *QGroundControl* `.plan` mission file to a MAVSDK-compatible drone.
+
+This script connects to a MAVSDK drone via UDP, imports a *QGroundControl* mission
+plan, and uploads the mission to the drone.
+
+View the mission in *QGroundControl*'s Plan View after running this script - use "*Download*" button.
+
+Install dependencies with:
+```
+pip3 install mavsdk --break-system-packages
+```
+
+Usage:
+```
+python3 plan_to_drone.py <path_to_plan_file>
 ```
 
 ------------------
