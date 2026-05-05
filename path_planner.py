@@ -74,8 +74,8 @@ TOLERANCE = 1e-9  # Tolerance for floating point comparisons
 def main():
     parser = argparse.ArgumentParser(description='Generate a boustrophedon path for specified KML/KMZ or QGC Plan polygons, avoiding others as obstacles.')
     parser.add_argument('input_file', help='Path to the input KML/KMZ or QGC Plan file.')
-    parser.add_argument('--output', dest='output_kml_file', default=None,
-                        help='Path to the output KML file. If not specified, defaults to <input_file_basename>_path.kml.')
+    parser.add_argument('-o', '--output', dest='output_kml_file', default=None,
+                        help='Path to the output file. If ends with .kml, outputs only KML. If ends with .plan, outputs only Plan. If omitted, outputs both KML and Plan files.')
     parser.add_argument('--target', dest='target_polygon_names', action='append', default=[],
                         help='Name of a polygon within the KML to generate paths for. Can be specified multiple times. If none specified, defaults to the largest polygon by area.')
     parser.add_argument('--angle', type=float, default=90.0, 
@@ -115,18 +115,39 @@ def main():
     safety_distance = args.safe # Get the safety distance
     num_segments = args.segments
 
-    # --- Determine Output KML filename --- 
+    # --- Determine Output filename and type --- 
+    output_file = None
+    output_kml_file = None
+    output_plan_file = None
+    
     if args.output_kml_file:
-        output_kml_file = args.output_kml_file
+        output_file = args.output_kml_file
+        if output_file.lower().endswith('.kml'):
+            output_kml_file = output_file
+        elif output_file.lower().endswith('.plan'):
+            output_plan_file = output_file
+        else:
+            # If extension is neither .kml nor .plan, assume .kml and warn
+            print(f"Warning: Unknown output file extension for '{output_file}'. Saving as KML.")
+            output_kml_file = output_file
     else:
+        # Default behavior: output both .kml and .plan
         input_basename = os.path.splitext(os.path.basename(input_file))[0]
         output_kml_file = f"{input_basename}_path.kml"
+        output_plan_file = f"{input_basename}_path.plan"
         
     # --- Determine Output Prefix for KML track name --- 
-    output_prefix = os.path.splitext(os.path.basename(output_kml_file))[0]
+    if output_kml_file:
+        output_prefix = os.path.splitext(os.path.basename(output_kml_file))[0]
+    else:
+        output_prefix = "path_output"
 
+    # Print output information
     print(f"Input File: {input_file}")
-    print(f"Output KML: {output_kml_file}")
+    if output_kml_file:
+        print(f"Output KML: {output_kml_file}")
+    if output_plan_file:
+        print(f"Output Plan: {output_plan_file}")
     print(f"Internal KML Track Name: {output_prefix}") 
     print(f"Path Angle: {angle_degrees} degrees")
     print(f"Path Separation: {separation_in_meters} meters")
@@ -496,24 +517,26 @@ def main():
         else:
             print("Error: Could not determine the correct transformer to convert final path to degrees.")
             
-    # --- Save Results to KML --- 
-    save_path_to_kml(
-        final_stitched_path_deg,
-        output_kml_file,
-        output_prefix, 
-        reverse_final_path,
-        target_polygons_with_names, # Pass targets with names
-        obstacles_with_names        # Pass obstacles with names
-    )
-
-    # --- Save Results to QGC Plan format --- 
-    output_plan_file = os.path.splitext(output_kml_file)[0] + ".plan"
-    save_path_to_qgc_plan(
-        final_stitched_path_deg,
-        output_plan_file,
-        reverse_final_path,
-        altitude_m=20.0
-    )
+    # --- Save Results --- 
+    if output_kml_file:
+        # --- Save Results to KML --- 
+        save_path_to_kml(
+            final_stitched_path_deg,
+            output_kml_file,
+            output_prefix, 
+            reverse_final_path,
+            target_polygons_with_names, # Pass targets with names
+            obstacles_with_names        # Pass obstacles with names
+        )
+    
+    if output_plan_file:
+        # --- Save Results to QGC Plan format --- 
+        save_path_to_qgc_plan(
+            final_stitched_path_deg,
+            output_plan_file,
+            reverse_final_path,
+            altitude_m=20.0
+        )
 
     # --- Final Summary --- 
     print(f"\nProcessing complete.")
@@ -542,8 +565,10 @@ def main():
     else: 
         print("  No final path was generated.")
         
-    print(f"  Output KML saved to:  {output_kml_file}") 
-    print(f"  Output Plan saved to: {output_plan_file}")
+    if output_kml_file:
+        print(f"  Output KML saved to:  {output_kml_file}") 
+    if output_plan_file:
+        print(f"  Output Plan saved to: {output_plan_file}")
 
 
 if __name__ == "__main__":
