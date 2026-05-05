@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 
+# ===============================================================================
+# @brief Upload a QGroundControl .plan mission file to a MAVSDK-compatible drone.
 #
-# pip3 install mavsdk --break-system-packages
+# This script connects to a MAVSDK drone via UDP, imports a QGroundControl mission
+#   plan, and uploads the mission to the drone.
+# View the mission in QGroundControl's Plan View after running this script -
+#   use "Download" button.
 #
+# Install dependencies with:
+#   pip3 install mavsdk --break-system-packages
+#
+# Usage:
+#   python3 plan_to_drone.py <path_to_plan_file>
+#
+# Created by: GitHub Copilot
+# Date: 2026-05-04
+# ===============================================================================
 
 import asyncio
 import sys

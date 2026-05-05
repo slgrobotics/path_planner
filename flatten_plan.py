@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-"""
-flatten_plan.py
-
-Flatten TransectStyleComplexItem (survey) entries in QGroundControl .plan files.
-
-Usage examples:
-  python3 flatten_plan.py input.plan -o output.plan
-  python3 flatten_plan.py input.plan --inplace --backup
-  python3 flatten_plan.py input.plan --dry-run
-
-  python3 flatten_plan.py front-east.plan --mode clean -o front-east.flattened.plan
-
-The script will replace any item that contains a `TransectStyleComplexItem` (or
-ComplexItem of type 'survey') with that complex item's inner `Items` list,
-preserving order. By default it will renumber `doJumpId` sequentially.
-"""
+# ===============================================================================
+# flatten_plan.py
+#
+# Flatten TransectStyleComplexItem (survey) entries in QGroundControl .plan files.
+# The script will replace any item that contains a `TransectStyleComplexItem` (or
+# ComplexItem of type 'survey') with that complex item's inner `Items` list,
+# preserving order. By default it will renumber `doJumpId` sequentially.
+#
+# Usage examples:
+#   python3 flatten_plan.py input.plan -o output.plan
+#   python3 flatten_plan.py input.plan --inplace --backup
+#   python3 flatten_plan.py input.plan --dry-run
+#
+#   python3 flatten_plan.py front-east.plan --mode clean -o front-east.flattened.plan
+#
+# ===============================================================================
 
 from __future__ import annotations
 
