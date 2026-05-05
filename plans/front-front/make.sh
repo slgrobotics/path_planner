@@ -15,6 +15,17 @@ PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
 SAFETY_MARGIN=${SAFETY_MARGIN:-0.5}
 
+# Error handling function
+error_exit() {
+    set +x
+    echo "ERROR: $1" >&2
+    echo "Script failed at line $2" >&2
+    exit 1
+}
+
+# Set trap for better error reporting
+trap 'error_exit "Command failed" $LINENO' ERR
+
 echo "Generating all derivative files in 'paths'"
 echo "Configuration:"
 echo "  MISSION_WP_SEPARATION: $MISSION_WP_SEPARATION"
@@ -25,7 +36,15 @@ echo "  PATH_SEPARATION: $PATH_SEPARATION"
 echo "  PATH_ANGLE: $PATH_ANGLE"
 echo "  SAFETY_MARGIN: $SAFETY_MARGIN"
 
-set -x
+# Script options for robustness
+set -e  # Exit on any command failure
+set -u  # Exit on undefined variables
+set -o pipefail  # Exit if any command in a pipeline fails
+
+# Trap to cleanup on exit (success or failure)
+trap 'echo "Script finished"' EXIT
+
+set -x  # Print commands as they execute
 
 mkdir -p paths
 
