@@ -149,7 +149,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Combine multiple QGroundControl .plan files into one combined .plan file.'
     )
-    parser.add_argument('output_plan', help='Path to the combined output .plan file')
+    parser.add_argument('-o', '--output', required=True, help='Path to the combined output .plan file')
     parser.add_argument('input_plans', nargs='+', help='Input QGroundControl .plan files to combine')
     return parser.parse_args()
 
@@ -163,8 +163,8 @@ def main() -> int:
             return 1
 
     combined_plan = combine_plans(args.input_plans)
-    save_combined_plan(combined_plan, args.output_plan)
-    print(f'Combined {len(args.input_plans)} plan files into: {args.output_plan}')
+    save_combined_plan(combined_plan, args.output)
+    print(f'Combined {len(args.input_plans)} plan files into: {args.output}')
     print(f'  Mission items: {len(combined_plan["mission"]["items"])}')
     print(f'  Geofence polygons: {len(combined_plan["geoFence"]["polygons"])}')
     print(f'  Geofence circles: {len(combined_plan["geoFence"]["circles"])}')
