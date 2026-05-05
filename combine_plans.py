@@ -8,7 +8,7 @@
 # points from multiple QGroundControl plan files into a single combined plan.
 #
 # Usage:
-#   python3 combine_plans.py output_combined.plan input1.plan input2.plan ...
+#   python3 combine_plans.py -o combined.plan input1.plan input2.plan ...
 #
 # Created by: VS Code Copilot (Free, Claude Haiku 4.5)
 # Date: 2026-05-05
