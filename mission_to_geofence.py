@@ -16,7 +16,7 @@
 #   python3 mission_to_geofence.py input_mission.plan [-o output_geofence.plan] [-e]
 #
 # Created by: VS Code Copilot (Free, Claude Haiku 4.5)
-# Date: 20246-04-28
+# Date: 2026-04-28
 # ===============================================================================
 
 import json
