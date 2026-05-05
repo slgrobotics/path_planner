@@ -48,9 +48,9 @@ set -x  # Print commands as they execute
 
 mkdir -p paths
 
-# 00_24_56.ulg
-../../ulg_to_mission.py 00_24_56.ulg \
-    -o paths/00_24_56_mission.plan \
+# front-west.feel.ulg
+../../ulg_to_mission.py front-west.feel.ulg \
+    -o paths/front-west.feel_mission.plan \
     --step $MISSION_WP_SEPARATION --altitude $CRUISE_ALTITUDE --cruise-speed $CRUISE_SPEED
 
 # front-west.plan
@@ -63,7 +63,7 @@ mkdir -p paths
 
 # Produce a combo plan with all geofences and the original "feel" mission:
 ../../combine_plans.py -o paths/front-combined.plan \
-    paths/00_24_56_mission.plan \
+    paths/front-west.feel_mission.plan \
     front-west.feel.plan \
     #paths/front-west.geofence.plan \
     #front-west.plan \
