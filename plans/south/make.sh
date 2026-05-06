@@ -48,25 +48,40 @@ set -x  # Print commands as they execute
 
 mkdir -p paths
 
-# front-west.feel.ulg
-../../ulg_to_mission.py front-west.feel.ulg \
-    -o paths/front-west.feel_mission.plan \
+# south-house.feel.ulg
+../../ulg_to_mission.py south-house.feel.ulg \
+    -o paths/south-house.feel_mission.plan \
     --step $MISSION_WP_SEPARATION --altitude $CRUISE_ALTITUDE --cruise-speed $CRUISE_SPEED
 
-# front-west.plan
-../../survey_to_geofence.py front-west.plan \
-    -o paths/front-west.geofence.plan
+# south-lawn.feel.ulg
+../../ulg_to_mission.py south-lawn.feel.ulg \
+    -o paths/south-lawn.feel_mission.plan \
+    --step $MISSION_WP_SEPARATION --altitude $CRUISE_ALTITUDE --cruise-speed $CRUISE_SPEED
 
-# front-west.plan
-#../../scan_to_geofence.py front-west.plan \
-#    -o paths/front-west.geofence.plan
+# south-house.geofence.plan
+../../mission_to_geofence.py paths/south-house.feel_mission.plan \
+    -o paths/south-house.geofence.plan
 
-# Produce a combo plan with all geofences and the original "feel" mission:
-../../combine_plans.py -o paths/front.combined.plan \
-    paths/front-west.feel_mission.plan \
-    front-west.feel.plan \
-    #paths/front-west.geofence.plan \
-    #front-west.plan \
+# south-lawn.geofence.plan
+../../mission_to_geofence.py paths/south-lawn.feel_mission.plan \
+    -o paths/south-lawn.geofence.plan
+
+# Produce a combo plan with "house"" geofence and the original "feel" mission:
+../../combine_plans.py -o paths/south-house.combined.plan \
+    paths/south-house.feel_mission.plan \
+    paths/south-house.geofence.plan \
+
+# Produce a combo plan with "lawn"" geofence and the original "feel" mission:
+../../combine_plans.py -o paths/south-lawn.combined.plan \
+    paths/south-lawn.feel_mission.plan \
+    paths/south-lawn.geofence.plan \
+
+# Produce a combo plan with all geofences and the original "feel" missions:
+../../combine_plans.py -o paths/south-all.combined.plan \
+    paths/south-house.feel_mission.plan \
+    paths/south-lawn.feel_mission.plan \
+    paths/south-house.geofence.plan \
+    paths/south-lawn.geofence.plan \
 
 set +x
 

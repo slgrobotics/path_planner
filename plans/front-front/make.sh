@@ -69,7 +69,7 @@ mkdir -p paths
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
 
 # Produce a combo plan with all geofences and the original "feel" mission:
-../../combine_plans.py -o paths/front-combined.plan \
+../../combine_plans.py -o paths/front.combined.plan \
     paths/front_two_trees_mission.plan \
     front-geofence.plan \
     front-north.geofence.plan \

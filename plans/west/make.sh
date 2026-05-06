@@ -48,25 +48,19 @@ set -x  # Print commands as they execute
 
 mkdir -p paths
 
-# front-west.feel.ulg
-../../ulg_to_mission.py front-west.feel.ulg \
-    -o paths/front-west.feel_mission.plan \
+# west.feel.ulg
+../../ulg_to_mission.py west.feel.ulg \
+    -o paths/west.feel_mission.plan \
     --step $MISSION_WP_SEPARATION --altitude $CRUISE_ALTITUDE --cruise-speed $CRUISE_SPEED
 
-# front-west.plan
-../../survey_to_geofence.py front-west.plan \
-    -o paths/front-west.geofence.plan
-
-# front-west.plan
-#../../scan_to_geofence.py front-west.plan \
-#    -o paths/front-west.geofence.plan
+# west.plan
+../../mission_to_geofence.py paths/west.feel_mission.plan \
+    -o paths/west.geofence.plan
 
 # Produce a combo plan with all geofences and the original "feel" mission:
-../../combine_plans.py -o paths/front.combined.plan \
-    paths/front-west.feel_mission.plan \
-    front-west.feel.plan \
-    #paths/front-west.geofence.plan \
-    #front-west.plan \
+../../combine_plans.py -o paths/west.combined.plan \
+    paths/west.feel_mission.plan \
+    paths/west.geofence.plan \
 
 set +x
 
