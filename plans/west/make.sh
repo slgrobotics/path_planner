@@ -62,6 +62,11 @@ mkdir -p paths
     -o paths/west.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
 
+# Track the geofence boundary as a mission (for "feeling" the geofence):
+../../geofence_to_mission.py west.geofence.plan \
+    -o paths/west.geofence_mission.plan \
+    -a $CRUISE_ALTITUDE
+
 # Produce a combo plan with all geofences and the original "feel" mission:
 ../../combine_plans.py -o paths/west.combined.plan \
     west.geofence.plan \

@@ -34,8 +34,16 @@ def load_geofence_plan(plan_path: str) -> List[Tuple[float, float]]:
         print("Warning: No polygons found in geofence")
         return []
     
-    # Get the first polygon's vertices
-    polygon = polygons[0].get('polygon', [])
+    # Find the first inclusion polygon
+    polygon = None
+    for poly in polygons:
+        if poly.get('inclusion', False):
+            polygon = poly.get('polygon', [])
+            break
+    
+    if polygon is None:
+        print("Warning: No inclusion polygons found in geofence")
+        return []
     
     # Extract [lat, lon] pairs
     vertices = [(point[0], point[1]) for point in polygon]
@@ -83,6 +91,29 @@ def create_mission_plan(vertices: List[Tuple[float, float]],
             "type": "SimpleItem"
         }
         items.append(item)
+    
+    # Close the loop by returning to the first point
+    first_lat, first_lon = vertices[0]
+    item = {
+        "AMSLAltAboveTerrain": altitude,
+        "Altitude": altitude,
+        "AltitudeMode": 1,
+        "autoContinue": True,
+        "command": 16,  # MAV_CMD_NAV_WAYPOINT
+        "doJumpId": len(vertices) + 1,
+        "frame": 3,  # MAV_FRAME_GLOBAL_RELATIVE_ALT
+        "params": [
+            0,      # Hold time (seconds)
+            0,      # Acceptance radius (m)
+            0,      # Pass radius (m)
+            None,   # Yaw angle (None = auto)
+            first_lat,
+            first_lon,
+            altitude
+        ],
+        "type": "SimpleItem"
+    }
+    items.append(item)
     
     # Calculate approximate home position (center of polygon)
     center_lat = sum(v[0] for v in vertices) / len(vertices)
