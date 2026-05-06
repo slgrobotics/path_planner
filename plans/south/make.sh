@@ -66,13 +66,25 @@ mkdir -p paths
 ../../mission_to_geofence.py paths/south-lawn.feel_mission.plan \
     -o paths/south-lawn.geofence.plan
 
+# south-house.geofence.plan (manually created)
+../../path_planner.py south-house.geofence.plan \
+    -o paths/south-house.geofence_path.plan \
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
+# south-lawn.geofence.plan (manually created)
+../../path_planner.py south-lawn.geofence.plan \
+    -o paths/south-lawn.geofence_path.plan \
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
 # Produce a combo plan with "house"" geofence and the original "feel" mission:
 ../../combine_plans.py -o paths/south-house.combined.plan \
+    south-house.geofence.plan \
     paths/south-house.feel_mission.plan \
     paths/south-house.geofence.plan \
 
 # Produce a combo plan with "lawn"" geofence and the original "feel" mission:
 ../../combine_plans.py -o paths/south-lawn.combined.plan \
+    south-lawn.geofence.plan \
     paths/south-lawn.feel_mission.plan \
     paths/south-lawn.geofence.plan \
 

@@ -57,8 +57,14 @@ mkdir -p paths
 ../../mission_to_geofence.py paths/west.feel_mission.plan \
     -o paths/west.geofence.plan
 
+# west.geofence.plan (manually created)
+../../path_planner.py west.geofence.plan \
+    -o paths/west.geofence_path.plan \
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
 # Produce a combo plan with all geofences and the original "feel" mission:
 ../../combine_plans.py -o paths/west.combined.plan \
+    west.geofence.plan \
     paths/west.feel_mission.plan \
     paths/west.geofence.plan \
 
