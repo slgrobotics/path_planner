@@ -17,7 +17,7 @@ polygons from the same file.
 
 ## How to use
 
-**Install prerequisites:**
+**Install prerequisites:** (Ubuntu 24.04 Desktop AMD)
 ```
 sudo apt-get install python3-shapely python3-pyproj
 pip3 install simplekml pyulog --break-system-packages
