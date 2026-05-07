@@ -1,5 +1,9 @@
 > This is a modified version of the [original](https://github.com/swepet/path_planner) *Path Planner* by Peter Lehnér.
 >
+> The `path_planner.py` script generates a boustrophedon (lawnmower pattern) path within specified 
+target polygons defined in a *KML/KMZ/.plan* file, while avoiding designated obstacle (*exclusion*)
+polygons from the same file.
+>
 > This version is able to load *".plan"* files created in [QGroundControl](https://qgroundcontrol.com/), and also outputs paths in QGC format (named "*_path.plan")
 >
 > All credit goes to the original project and its author - Peter Lehnér.
@@ -8,6 +12,8 @@
 > - methods are moved (mostly verbatim) to *helpers* directory
 > - added `helpers/qgc_format.py` to handle QGC ".plan" format
 > - added sample files to demonstrate functionality
+> - added [utilities](https://github.com/slgrobotics/path_planner/blob/main/README.md#utilities-missions-and-geofence-converters) to support common tasks
+(needed for my [Lawn mower project](https://github.com/slgrobotics/robots_bringup/blob/main/Docs/Lawnmower/README.md))
 
 ## How to use
 
@@ -54,7 +60,7 @@ or [Google MyMaps](https://www.google.com/maps/d/) to display or create *".kml"*
 There are two converter scripts to assist with "lawn mowing mission" planning. The typical workflow is as follows:
 
 - Use *[QGroundControl](https://qgroundcontrol.com/)* to plan a mission that traces the perimeter of your mowing area. Test it live and adjust as needed.
-Alternatively, run `ulg_to_mission.py` to convert a PX4 `.ulg` log file to a mission `.plan` file. 
+Alternatively, trace the perimeter of your lawn and run `ulg_to_mission.py` to convert a PX4 `.ulg` log file to a mission `.plan` file. 
 - Run `mission_to_geofence.py` to convert the mission into a geofence polygon.
 - Optionally, use *QGroundControl* to edit the Fence:
   - add exclusion areas (polygons and circles)
@@ -89,6 +95,18 @@ The resulting mission can be used to “trace” or verify the boundary of a geo
 Usage:
 ```
 ~/planner_ws/path_planner/geofence_to_mission.py input_geofence.plan [-o output_mission.plan] [-a ALTITUDE]
+```
+
+#### survey_to_geofence.py
+
+Extract a QGroundControl *survey* polygon and output a geofence polygon.
+
+This script takes a QGroundControl .plan file containing a survey complex item
+and converts the survey polygon into a geofence inclusion zone.
+
+Usage:
+```
+python3 survey_to_geofence.py input_survey.plan [-o output_geofence.plan]
 ```
 
 #### ulg_to_mission.py
@@ -163,6 +181,9 @@ Usage:
 ```
 python3 plan_to_drone.py <path_to_plan_file>
 ```
+
+**Note:** subdirectories under `plans` contain `make.sh` scripts that I use while planning my paths. 
+My data files are not included in this repository. Generate them using your data and the appropriate tools.
 
 ------------------
 
