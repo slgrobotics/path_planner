@@ -86,7 +86,7 @@ def read_plan_file(plan_file):
     return mission_points, polygons, circles
 
 
-def plot_plan(mission_points, polygons, circles):
+def plot_plan(mission_points, polygons, circles, file_name=""):
     """
     Create and display a matplotlib plot of the mission and geofences.
     """
@@ -171,7 +171,7 @@ def plot_plan(mission_points, polygons, circles):
     # Set labels and title
     ax.set_xlabel('Longitude (degrees)', fontsize=12)
     ax.set_ylabel('Latitude (degrees)', fontsize=12)
-    ax.set_title('Mission Plan Visualization', fontsize=14, fontweight='bold')
+    ax.set_title(f'Plan: {file_name}', fontsize=14, fontweight='bold')
     
     # Create legend
     legend_elements = [
@@ -208,7 +208,7 @@ def main():
         mission_points, polygons, circles = read_plan_file(args.plan_file)
         
         if not args.no_show:
-            plot_plan(mission_points, polygons, circles)
+            plot_plan(mission_points, polygons, circles, args.plan_file)
         else:
             print("Plan data loaded successfully (plot window suppressed)")
             
