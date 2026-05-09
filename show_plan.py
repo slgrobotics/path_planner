@@ -92,6 +92,10 @@ def plot_plan(mission_points, polygons, circles):
     """
     fig, ax = plt.subplots(figsize=(12, 10))
     
+    # Collect all coordinates to determine axis limits
+    all_lons = []
+    all_lats = []
+    
     # Plot geofence polygons
     colors_inclusion = ['green', 'lightgreen', 'darkgreen', 'lime', 'forestgreen']
     colors_exclusion = ['red', 'lightcoral', 'darkred', 'salmon', 'crimson']
@@ -102,6 +106,11 @@ def plot_plan(mission_points, polygons, circles):
         
         polygon = MPLPolygon(points, fill=True, edgecolor='black', facecolor=color, alpha=alpha, linewidth=1.5)
         ax.add_patch(polygon)
+        
+        # Collect coordinates for axis limits
+        for lon, lat in points:
+            all_lons.append(lon)
+            all_lats.append(lat)
         
         # Add label at polygon centroid
         if len(points) > 0:
@@ -120,12 +129,19 @@ def plot_plan(mission_points, polygons, circles):
         
         circle = plt.Circle((lon, lat), radius_deg, fill=True, edgecolor='black', facecolor=color, alpha=alpha, linewidth=1.5)
         ax.add_patch(circle)
+        
+        # Collect coordinates for axis limits
+        all_lons.extend([lon - radius_deg, lon + radius_deg])
+        all_lats.extend([lat - radius_deg, lat + radius_deg])
     
     # Plot mission waypoints and path
     if len(mission_points) > 0:
         lons = [p[0] for p in mission_points]
         lats = [p[1] for p in mission_points]
         alts = [p[2] for p in mission_points]
+        
+        all_lons.extend(lons)
+        all_lats.extend(lats)
         
         # Plot path as a line
         ax.plot(lons, lats, 'b-', linewidth=2, label='Mission Path', zorder=5)
@@ -136,6 +152,21 @@ def plot_plan(mission_points, polygons, circles):
         # Add waypoint numbers
         for i, (lon, lat, alt) in enumerate(mission_points):
             ax.text(lon, lat, f' {i}', fontsize=9, fontweight='bold', color='blue')
+    
+    # Set axis limits with padding if we have data
+    if all_lons and all_lats:
+        min_lon, max_lon = min(all_lons), max(all_lons)
+        min_lat, max_lat = min(all_lats), max(all_lats)
+        
+        # Add 10% padding
+        lon_range = max_lon - min_lon if max_lon > min_lon else 0.01
+        lat_range = max_lat - min_lat if max_lat > min_lat else 0.01
+        
+        padding_lon = lon_range * 0.1
+        padding_lat = lat_range * 0.1
+        
+        ax.set_xlim(min_lon - padding_lon, max_lon + padding_lon)
+        ax.set_ylim(min_lat - padding_lat, max_lat + padding_lat)
     
     # Set labels and title
     ax.set_xlabel('Longitude (degrees)', fontsize=12)
@@ -184,6 +215,9 @@ def main():
     except FileNotFoundError:
         print(f"Error: File not found: {args.plan_file}", file=sys.stderr)
         sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nInterrupted by user (Ctrl+C)", file=sys.stderr)
+        sys.exit(0)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
