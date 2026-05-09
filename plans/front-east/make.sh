@@ -13,7 +13,7 @@ CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
-SAFETY_MARGIN=${SAFETY_MARGIN:-0.5}
+SAFETY_MARGIN=${SAFETY_MARGIN:-0.0}
 
 # Error handling function
 error_exit() {
@@ -53,7 +53,7 @@ mkdir -p paths
     -o paths/front-east-feel_mission.plan \
     --step $MISSION_WP_SEPARATION --altitude $CRUISE_ALTITUDE --cruise-speed $CRUISE_SPEED
 
-# front-east.plan
+# front-east.plan (previous manual survey -> geofence)
 ../../survey_to_geofence.py front-east.plan \
     -o paths/front-east.geofence.plan
 
@@ -65,19 +65,29 @@ mkdir -p paths
 #../../scan_to_geofence.py front-east.flattened.plan \
 #    -o paths/front-east.flattened.geofence.plan
 
-# front-east_geofence.plan
+# front-east_geofence.plan (manually created):
 ../../path_planner.py front-east_geofence.plan \
     -o paths/front-east_geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
 
-# Produce a combo plan with all geofences and the original "feel" mission:
-../../combine_plans.py -o paths/front.combined.plan \
+# make a 1 meter version for combo plan:
+../../path_planner.py front-east_geofence.plan \
+    -o paths/front-east_geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
+# Produce a combo plan with all geofences and the "1 meter" path:
+../../combine_plans.py -o paths/front-east.combined.plan \
     paths/front-east-feel_mission.plan \
-    paths/front-east.geofence.plan \
+    front-east_geofence.plan \
+    paths/front-east_geofence_path_1m.plan \
+    #paths/front-east.geofence.plan \
     #paths/front-east_geofence_path.plan
     #front-east.plan \
     #front-east.flattened.plan \
     #paths/front-east.flattened.geofence.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/front-east.combined.plan
 
 set +x
 

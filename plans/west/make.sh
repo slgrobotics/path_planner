@@ -13,7 +13,7 @@ CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
-SAFETY_MARGIN=${SAFETY_MARGIN:-0.5}
+SAFETY_MARGIN=${SAFETY_MARGIN:-0.0}
 
 # Error handling function
 error_exit() {
@@ -62,16 +62,25 @@ mkdir -p paths
     -o paths/west.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
 
+# west.geofence.plan (manually created) - make a 1 meter version for combo plan:
+../../path_planner.py west.geofence.plan \
+    -o paths/west.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
 # Track the geofence boundary as a mission (for "feeling" the geofence):
 ../../geofence_to_mission.py west.geofence.plan \
     -o paths/west.geofence_mission.plan \
     -a $CRUISE_ALTITUDE
 
-# Produce a combo plan with all geofences and the original "feel" mission:
+# Produce a combo plan with all geofences and the "1 meter" path:
 ../../combine_plans.py -o paths/west.combined.plan \
     west.geofence.plan \
-    paths/west.feel_mission.plan \
-    paths/west.geofence.plan \
+    paths/west.geofence_path_1m.plan \
+    #paths/west.feel_mission.plan \
+    #paths/west.geofence.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/west.combined.plan
 
 set +x
 

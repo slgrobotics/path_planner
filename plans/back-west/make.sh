@@ -13,7 +13,7 @@ CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
-SAFETY_MARGIN=${SAFETY_MARGIN:-0.5}
+SAFETY_MARGIN=${SAFETY_MARGIN:-0.0}
 
 # Error handling function
 error_exit() {
@@ -56,6 +56,19 @@ mkdir -p paths
 ../../path_planner.py paths/back-west.geofence.plan \
     -o paths/back-west.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
+# make a 1 meter version for combo plan:
+../../path_planner.py paths/back-west.geofence.plan \
+    -o paths/back-west.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+
+# Produce a combo plan with all geofences and the "1 meter" path:
+../../combine_plans.py -o paths/back-west.combined.plan \
+    paths/back-west.geofence.plan \
+    paths/back-west.geofence_path_1m.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/back-west.combined.plan
 
 set +x
 
