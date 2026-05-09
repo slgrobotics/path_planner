@@ -144,14 +144,14 @@ def plot_plan(mission_points, polygons, circles):
         all_lats.extend(lats)
         
         # Plot path as a line
-        ax.plot(lons, lats, 'b-', linewidth=2, label='Mission Path', zorder=5)
+        ax.plot(lons, lats, 'b-', linewidth=1, label='Mission Path', zorder=5)
         
         # Plot waypoints as points
-        ax.scatter(lons, lats, c='blue', s=100, marker='o', zorder=6, edgecolors='darkblue', linewidth=1.5)
+        ax.scatter(lons, lats, c='blue', s=10, marker='o', zorder=6, edgecolors='darkblue', linewidth=1.5)
         
         # Add waypoint numbers
         for i, (lon, lat, alt) in enumerate(mission_points):
-            ax.text(lon, lat, f' {i}', fontsize=9, fontweight='bold', color='blue')
+            ax.text(lon, lat, f' {i}', fontsize=10, fontweight='bold', color='blue')
     
     # Set axis limits with padding if we have data
     if all_lons and all_lats:
