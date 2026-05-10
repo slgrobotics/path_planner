@@ -42,7 +42,7 @@ set -u  # Exit on undefined variables
 set -o pipefail  # Exit if any command in a pipeline fails
 
 # Trap to cleanup on exit (success or failure)
-trap 'echo "Script finished"' EXIT
+trap 'sleep 2; echo "Script finished"' EXIT
 
 set -x  # Print commands as they execute
 
@@ -68,7 +68,7 @@ mkdir -p paths
     paths/back-west.geofence_path_1m.plan \
 
 # Display the combined plan in a window:
-../../show_plan.py paths/back-west.combined.plan
+../../show_plan.py paths/back-west.combined.plan &
 
 set +x
 

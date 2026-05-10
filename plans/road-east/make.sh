@@ -12,7 +12,7 @@ CRUISE_ALTITUDE=${CRUISE_ALTITUDE:-20.0}
 CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
-PATH_ANGLE=${PATH_ANGLE:-166.8}
+PATH_ANGLE=${PATH_ANGLE:-166.2}
 PATH_SAFETY_MARGIN=${PATH_SAFETY_MARGIN:-0.0}
 
 # Error handling function
@@ -42,7 +42,7 @@ set -u  # Exit on undefined variables
 set -o pipefail  # Exit if any command in a pipeline fails
 
 # Trap to cleanup on exit (success or failure)
-trap 'echo "Script finished"' EXIT
+trap 'sleep 2; echo "Script finished"' EXIT
 
 set -x  # Print commands as they execute
 
@@ -56,6 +56,19 @@ mkdir -p paths
 ../../path_planner.py paths/road-east.geofence.plan \
     -o paths/road-east.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
+# road-east.geofence.plan (manually created) - make a 1 meter version for combo plan:
+../../path_planner.py paths/road-east.geofence.plan \
+    -o paths/road-east.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
+# Produce a combo plan with all geofences and the "1 meter" path:
+../../combine_plans.py -o paths/road-east.combined.plan \
+    paths/road-east.geofence.plan \
+    paths/road-east.geofence_path_1m.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/road-east.combined.plan &
 
 set +x
 
