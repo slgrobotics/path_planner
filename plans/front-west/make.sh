@@ -13,7 +13,7 @@ CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
-SAFETY_MARGIN=${SAFETY_MARGIN:-0.5}
+PATH_SAFETY_MARGIN=${PATH_SAFETY_MARGIN:-0.0}
 
 # Error handling function
 error_exit() {
@@ -34,7 +34,7 @@ echo "  CRUISE_SPEED: $CRUISE_SPEED"
 echo "  CIRCLE_SEGMENTS: $CIRCLE_SEGMENTS"
 echo "  PATH_SEPARATION: $PATH_SEPARATION"
 echo "  PATH_ANGLE: $PATH_ANGLE"
-echo "  SAFETY_MARGIN: $SAFETY_MARGIN"
+echo "  PATH_SAFETY_MARGIN: $PATH_SAFETY_MARGIN"
 
 # Script options for robustness
 set -e  # Exit on any command failure
@@ -61,7 +61,7 @@ mkdir -p paths
 #../../scan_to_geofence.py front-west.plan \
 #    -o paths/front-west.geofence.plan
 
-# Produce a combo plan with all geofences and the original "feel" mission:
+# Produce a combo plan with all geofences and the "1 meter" path:
 ../../combine_plans.py -o paths/front.combined.plan \
     paths/front-west.feel_mission.plan \
     front-west.feel.plan \

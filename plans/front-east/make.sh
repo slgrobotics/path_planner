@@ -13,7 +13,7 @@ CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
 PATH_ANGLE=${PATH_ANGLE:-0}
-SAFETY_MARGIN=${SAFETY_MARGIN:-0.0}
+PATH_SAFETY_MARGIN=${PATH_SAFETY_MARGIN:-0.0}
 
 # Error handling function
 error_exit() {
@@ -34,7 +34,7 @@ echo "  CRUISE_SPEED: $CRUISE_SPEED"
 echo "  CIRCLE_SEGMENTS: $CIRCLE_SEGMENTS"
 echo "  PATH_SEPARATION: $PATH_SEPARATION"
 echo "  PATH_ANGLE: $PATH_ANGLE"
-echo "  SAFETY_MARGIN: $SAFETY_MARGIN"
+echo "  PATH_SAFETY_MARGIN: $PATH_SAFETY_MARGIN"
 
 # Script options for robustness
 set -e  # Exit on any command failure
@@ -68,12 +68,12 @@ mkdir -p paths
 # front-east_geofence.plan (manually created):
 ../../path_planner.py front-east_geofence.plan \
     -o paths/front-east_geofence_path.plan \
-    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
 
 # make a 1 meter version for combo plan:
 ../../path_planner.py front-east_geofence.plan \
     -o paths/front-east_geofence_path_1m.plan \
-    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $SAFETY_MARGIN
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
 
 # Produce a combo plan with all geofences and the "1 meter" path:
 ../../combine_plans.py -o paths/front-east.combined.plan \
