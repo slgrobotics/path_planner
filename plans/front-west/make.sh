@@ -7,7 +7,7 @@
 #
 
 # Configuration variables - adjust these as needed
-MISSION_WP_SEPARATION=${MISSION_WP_SEPARATION:-1.0}
+MISSION_WP_SEPARATION=${MISSION_WP_SEPARATION:-0.5}
 CRUISE_ALTITUDE=${CRUISE_ALTITUDE:-20.0}
 CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
@@ -57,16 +57,26 @@ mkdir -p paths
 ../../survey_to_geofence.py front-west.plan \
     -o paths/front-west.geofence.plan
 
-# front-west.plan
-#../../scan_to_geofence.py front-west.plan \
-#    -o paths/front-west.geofence.plan
+# front-west.geofence.plan (generated)
+../../path_planner.py paths/front-west.geofence.plan \
+    -o paths/front-west.geofence_path.plan \
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
+# front-west.geofence.plan (generated) - make a 1 meter version for combo plan:
+../../path_planner.py paths/front-west.geofence.plan \
+    -o paths/front-west.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
 
 # Produce a combo plan with all geofences and the "1 meter" path:
-../../combine_plans.py -o paths/front.combined.plan \
-    paths/front-west.feel_mission.plan \
+../../combine_plans.py -o paths/front-west.combined.plan \
     front-west.feel.plan \
+    paths/front-west.geofence_path_1m.plan \
+    front-west.plan \
+    paths/front-west.feel_mission.plan \
     #paths/front-west.geofence.plan \
-    #front-west.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/front-west.combined.plan &
 
 set +x
 
