@@ -12,7 +12,7 @@ CRUISE_ALTITUDE=${CRUISE_ALTITUDE:-20.0}
 CRUISE_SPEED=${CRUISE_SPEED:-1.0}
 CIRCLE_SEGMENTS=${CIRCLE_SEGMENTS:-16}
 PATH_SEPARATION=${PATH_SEPARATION:-0.25}
-PATH_ANGLE=${PATH_ANGLE:-0}
+PATH_ANGLE=${PATH_ANGLE:-90.0}
 PATH_SAFETY_MARGIN=${PATH_SAFETY_MARGIN:-0.0}
 
 # Error handling function
@@ -63,10 +63,32 @@ mkdir -p paths
     -o paths/front-north.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
 
+# front-north.geofence.plan - make a 1 meter version for combo plan:
+../../path_planner.py front-north.geofence.plan \
+    -o paths/front-north.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
 # front-south.geofence.plan
 ../../path_planner.py front-south.geofence.plan \
     -o paths/front-south.geofence_path.plan \
     --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
+# front-south.geofence.plan - make a 1 meter version for combo plan:
+../../path_planner.py front-south.geofence.plan \
+    -o paths/front-south.geofence_path_1m.plan \
+    --segments $CIRCLE_SEGMENTS --sep 1.0 --angle $PATH_ANGLE --safe $PATH_SAFETY_MARGIN
+
+# Produce a combo plan with North geofences and the "1 meter" path:
+../../combine_plans.py -o paths/front-north.combined.plan \
+    paths/front_two_trees_mission.plan \
+    front-north.geofence.plan \
+    paths/front-north.geofence_path_1m.plan \
+
+# Produce a combo plan with South geofences and the "1 meter" path:
+../../combine_plans.py -o paths/front-south.combined.plan \
+    paths/front_two_trees_mission.plan \
+    front-south.geofence.plan \
+    paths/front-south.geofence_path_1m.plan \
 
 # Produce a combo plan with all geofences and the "1 meter" path:
 ../../combine_plans.py -o paths/front.combined.plan \
@@ -74,6 +96,11 @@ mkdir -p paths
     front-geofence.plan \
     front-north.geofence.plan \
     front-south.geofence.plan
+
+# Display the combined plan in a window:
+../../show_plan.py paths/front-north.combined.plan &
+../../show_plan.py paths/front-south.combined.plan &
+../../show_plan.py paths/front.combined.plan &
 
 set +x
 
