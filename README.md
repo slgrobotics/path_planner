@@ -182,6 +182,17 @@ Usage:
 python3 plan_to_drone.py <path_to_plan_file>
 ```
 
+#### show_plan.py
+
+Visualize mission waypoints and geofence polygons from a *QGroundControl* `.plan` file.
+
+Displays the data in a 2D plot with x (longitude) and y (latitude) coordinates.
+
+Usage:
+```
+python3 show_plan.py input_plan.plan
+```
+
 **Note:** subdirectories under `plans` contain `make.sh` scripts that I use while planning my paths. 
 My data files are not included in this repository. Generate them using your data and the appropriate tools.
 
