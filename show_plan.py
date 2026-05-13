@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Visualize mission waypoints and geofence polygons from a QGroundControl .plan file.
-Displays the data in a 2D plot with x (longitude) and y (latitude) coordinates.
-"""
+
+# ===============================================================================
+# Visualize mission waypoints and geofence polygons from a QGroundControl .plan file.
+# Displays the data in a 2D plot with x (longitude) and y (latitude) coordinates.
+#
+# Usage:
+#   python3 show_plan.py input_plan.plan
+#
+# Created by: VS Code Copilot (Free, Claude Haiku 4.5)
+# Date: 2026-05-10
+# ===============================================================================
 
 import sys
 import json
