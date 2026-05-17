@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Generate a lawnmower scan path by squeezing the target polygon area with a given
 separation and respecting exclusion zones.
@@ -16,7 +17,7 @@ import pyproj
 
 from helpers.kml_format import read_kml_polygons, save_path_to_kml
 from helpers.qgc_format import read_qgc_plan_polygons, save_path_to_qgc_plan
-from helpers.path_math import generate_boustrophedon_path, split_path_by_obstacles, _find_intersection_points
+from helpers.path_math import generate_boustrophedon_path, split_path_by_obstacles, _find_intersection_points, generate_squeeze_perimeter_paths
 from helpers.stitching import order_tracks_along_path, stitch_path_segments_proj
 from helpers.tracks import create_augmented_obstacle_tracks
 
@@ -130,11 +131,18 @@ def build_output_paths(input_file, output_file):
 
 def project_polygons(polygons, transformer):
     projected = []
-    for name, poly in polygons:
+    for item in polygons:
+        if isinstance(item, tuple) and len(item) == 2:
+            name, poly = item
+        else:
+            name, poly = None, item
         try:
             projected.append(transform(transformer.transform, poly))
         except Exception as e:
-            print(f"Warning: Could not project polygon '{name}': {e}")
+            if name is not None:
+                print(f"Warning: Could not project polygon '{name}': {e}")
+            else:
+                print(f"Warning: Could not project polygon: {e}")
     return projected
 
 
@@ -205,45 +213,17 @@ def main():
         print("Error: Coverage area is empty after applying exclusion zones.")
         sys.exit(1)
 
-    base_path_proj, centroid_proj, transformer_to_proj, transformer_to_deg = generate_boustrophedon_path(
+    # Generate squeezed perimeters and stitch them into a single projected path
+    final_path_proj, centroid_proj, transformer_to_proj, transformer_to_deg = generate_squeeze_perimeter_paths(
         target_union,
         separation_meters=args.sep,
-        angle_deg=args.angle,
+        obstacles_deg=obstacle_geometries,
         safety_distance=args.safe
     )
 
-    if base_path_proj.is_empty or not base_path_proj.is_valid:
-        print("Error: Generated base path is empty or invalid.")
+    if final_path_proj is None or final_path_proj.is_empty or not final_path_proj.is_valid:
+        print("Error: Squeeze perimeter generation failed or produced no path.")
         sys.exit(1)
-
-    obstacles_proj = project_polygons(obstacle_geometries, transformer_to_proj)
-    if args.safe > 0 and obstacles_proj:
-        buffered_obstacles_proj = []
-        for obs in obstacles_proj:
-            try:
-                buffered = obs.buffer(abs(args.safe), join_style=2)
-                if buffered.is_valid and not buffered.is_empty:
-                    buffered_obstacles_proj.append(buffered)
-                else:
-                    buffered_obstacles_proj.append(obs)
-            except Exception as e:
-                print(f"Warning: Could not buffer an exclusion zone: {e}")
-                buffered_obstacles_proj.append(obs)
-    else:
-        buffered_obstacles_proj = obstacles_proj
-
-    split_tracks_proj = split_path_by_obstacles(base_path_proj, buffered_obstacles_proj)
-    if not split_tracks_proj:
-        print("Warning: No valid path segments remained after obstacle splitting.")
-
-    ordered_tracks_proj = order_tracks_along_path(split_tracks_proj, base_path_proj)
-    intersection_points_proj = _find_intersection_points(base_path_proj, buffered_obstacles_proj)
-    obstacle_tracks_proj = create_augmented_obstacle_tracks(buffered_obstacles_proj, intersection_points_proj)
-
-    final_path_proj = stitch_path_segments_proj(ordered_tracks_proj, obstacle_tracks_proj)
-    if final_path_proj is None or final_path_proj.is_empty:
-        print("Warning: Stitching failed or produced no path. Falling back to raw base path.")
-        final_path_proj = base_path_proj
 
     try:
         final_path_deg = transform(transformer_to_deg.transform, final_path_proj)

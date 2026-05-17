@@ -243,11 +243,10 @@ def stitch_path_segments_proj(ordered_tracks_proj, obstacle_tracks_proj):
                 # print(f"    Warning: Error during bridge pre-simplification: {e}") # Removed
 
         if not bridge_coords:
-             # If no bridge path found, we cannot reliably continue stitching.
-             # Return the path stitched up to this point.
-             print(f"Warning: Could not find bridge path between track {i} and {i+1}. Stopping stitching process.")
-             # Check if final_coords is valid before returning
-             return LineString(final_coords) if len(final_coords) >= 2 else None
+            # Fallback: use direct straight-line bridge between end and start to continue stitching.
+            # This may cross obstacles but allows generating a continuous path instead of failing.
+            print(f"Warning: Could not find bridge path between track {i} and {i+1}. Using straight-line fallback.")
+            bridge_coords = [end_i, start_i_plus_1]
 
         coords_before_bridge_append = len(final_coords)
         if len(bridge_coords) > 0:

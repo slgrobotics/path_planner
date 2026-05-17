@@ -4,6 +4,8 @@ from shapely.geometry import Polygon, LineString, MultiPolygon, Point, MultiLine
 from shapely.ops import unary_union, transform
 from shapely.affinity import rotate
 import pyproj
+from .stitching import stitch_path_segments_proj
+from .tracks import create_augmented_obstacle_tracks
 
 TOLERANCE = 1e-9  # Tolerance for floating point comparisons
 
@@ -363,3 +365,190 @@ def _find_intersection_points(path_proj, obstacles_proj):
     # print(f"Found {len(unique_intersection_points)} unique intersection points (projected).") # Removed
     # RETURN PROJECTED POINTS
     return unique_intersection_points
+
+
+def generate_squeeze_perimeter_paths(main_polygon_deg, separation_meters=0.3, obstacles_deg=None, safety_distance=0.0):
+    """
+    Generate a path by iteratively insetting (squeezing) the main polygon by
+    `separation_meters` and collecting the perimeters. Obstacles (degrees)
+    are subtracted at each inset step. Returns a stitched LineString in
+    PROJECTED coordinates plus centroid and transformers.
+
+    Args:
+        main_polygon_deg: Polygon or MultiPolygon in degrees (EPSG:4326)
+        separation_meters: inset distance between successive perimeters
+        obstacles_deg: optional list of Polygon/MultiPolygon obstacles (degrees)
+        safety_distance: additional safety buffer to apply to obstacles (meters)
+    Returns:
+        final_path_proj, centroid_proj, transformer_to_proj, transformer_to_deg
+    """
+    from shapely.geometry import LineString, MultiLineString
+    from shapely.ops import unary_union
+
+    if obstacles_deg is None:
+        obstacles_deg = []
+
+    # Determine projection based on centroid
+    crs_deg = "EPSG:4326"
+    if isinstance(main_polygon_deg, MultiPolygon):
+        centroid_deg = main_polygon_deg.centroid
+    elif isinstance(main_polygon_deg, Polygon):
+        centroid_deg = main_polygon_deg.centroid
+    else:
+        raise TypeError(f"Expected Polygon or MultiPolygon, got {type(main_polygon_deg)}")
+
+    utm_zone = int((centroid_deg.x + 180) / 6) + 1
+    hemisphere_code = 6 if centroid_deg.y >= 0 else 7
+    crs_proj = f"EPSG:32{hemisphere_code}{utm_zone:02d}"
+
+    transformer_to_proj = pyproj.Transformer.from_crs(crs_deg, crs_proj, always_xy=True)
+    transformer_to_deg = pyproj.Transformer.from_crs(crs_proj, crs_deg, always_xy=True)
+
+    main_proj = transform(transformer_to_proj.transform, main_polygon_deg)
+
+    # Project obstacles
+    obstacles_proj = [transform(transformer_to_proj.transform, o) for o in obstacles_deg if o is not None]
+    obstacles_union = None
+    valid_obs = [o for o in obstacles_proj if not o.is_empty and o.is_valid]
+    if valid_obs:
+        obstacles_union = unary_union(valid_obs)
+        if safety_distance and safety_distance > 0:
+            try:
+                obstacles_union = obstacles_union.buffer(abs(safety_distance), join_style=2)
+            except Exception:
+                pass
+
+    perimeters = []
+
+    current = main_proj
+    # Iterate inward collecting the exterior of each inset polygon
+    max_iters = 10000
+    iter_count = 0
+    min_area = (separation_meters * separation_meters) * 0.01
+    while current is not None and not current.is_empty and iter_count < max_iters and current.area > min_area:
+        iter_count += 1
+
+        # Extract exterior perimeters from current geometry (before obstacle subtraction)
+        geoms = []
+        if isinstance(current, Polygon):
+            geoms = [current]
+        elif isinstance(current, MultiPolygon):
+            geoms = list(current.geoms)
+
+        for g in geoms:
+            if g is None or g.is_empty:
+                continue
+            try:
+                coords = list(g.exterior.coords)
+                if len(coords) >= 2:
+                    perimeters.append(LineString(coords))
+            except Exception:
+                continue
+
+        # Inset the polygon for next iteration
+        try:
+            next_poly = current.buffer(-abs(separation_meters), join_style=2)
+        except Exception:
+            break
+
+        # Prevent infinite loops due to tiny geometry changes
+        if next_poly.is_empty:
+            break
+
+        current = next_poly
+
+    if not perimeters:
+        return LineString(), main_proj.centroid, transformer_to_proj, transformer_to_deg
+
+    # Alternate directions for subsequent perimeters to reduce long jumps
+    for i in range(1, len(perimeters), 2):
+        try:
+            perimeters[i] = LineString(list(perimeters[i].coords)[::-1])
+        except Exception:
+            pass
+
+    # Before stitching, subtract obstacles from each perimeter to create tracks
+    perim_tracks = []
+    if obstacles_union is not None:
+        for p in perimeters:
+            try:
+                diffed = p.difference(obstacles_union)
+            except Exception:
+                diffed = p
+            # diffed may be LineString, MultiLineString or GeometryCollection
+            if isinstance(diffed, LineString):
+                if diffed.length > TOLERANCE:
+                    perim_tracks.append(diffed)
+            elif isinstance(diffed, MultiLineString):
+                for seg in diffed.geoms:
+                    if isinstance(seg, LineString) and seg.length > TOLERANCE:
+                        perim_tracks.append(seg)
+            else:
+                # Try extracting lines from collections
+                for geom in getattr(diffed, 'geoms', []):
+                    if isinstance(geom, LineString) and geom.length > TOLERANCE:
+                        perim_tracks.append(geom)
+    else:
+        perim_tracks = perimeters[:]
+
+    # Debug info: report counts and basic stats
+    try:
+        print(f"Debug (squeeze): Generated {len(perimeters)} raw perimeters, {len(perim_tracks)} tracks after obstacle subtraction.")
+        if perim_tracks:
+            lengths = [p.length for p in perim_tracks]
+            print(f"Debug (squeeze): Track lengths (m) sample: min={min(lengths):.2f}, max={max(lengths):.2f}, total={sum(lengths):.2f}")
+            # show first few track endpoints
+            for i, t in enumerate(perim_tracks[:8]):
+                try:
+                    coords = list(t.coords)
+                    print(f"Debug (squeeze): track #{i} type=LineString coords={len(coords)} start={coords[0]} end={coords[-1]}")
+                except Exception:
+                    print(f"Debug (squeeze): track #{i} non-linestring {type(t)}")
+    except Exception:
+        pass
+
+    # Build a representative line for intersection detection: try union, else concatenate
+    try:
+        base_union = unary_union(perim_tracks if perim_tracks else perimeters)
+    except Exception:
+        base_union = None
+
+    # If union is multipart or None, concatenate perimeters into a single LineString for intersection checks
+    from shapely.geometry import LineString as _LineString
+    if base_union is None or not isinstance(base_union, _LineString):
+        concat_coords = []
+        for p in perimeters:
+            if not p.coords: continue
+            if concat_coords and Point(concat_coords[-1]).distance(Point(p.coords[0])) < TOLERANCE:
+                concat_coords.extend(list(p.coords)[1:])
+            else:
+                concat_coords.extend(list(p.coords))
+        try:
+            base_for_intersections = LineString(concat_coords) if len(concat_coords) >= 2 else None
+        except Exception:
+            base_for_intersections = None
+    else:
+        base_for_intersections = base_union
+
+    # Find intersection points between perimeters and obstacle boundaries
+    intersection_points = _find_intersection_points(base_for_intersections, valid_obs)
+    obstacle_tracks = create_augmented_obstacle_tracks(valid_obs, intersection_points)
+
+    # Attempt to stitch tracks (perimeters after obstacle subtraction) into a single path
+    tracks_to_stitch = perim_tracks if perim_tracks else perimeters
+    final_path = stitch_path_segments_proj(tracks_to_stitch, obstacle_tracks)
+
+    # If stitching failed, fallback to simple concatenation
+    if final_path is None or final_path.is_empty:
+        concat_coords = []
+        for p in perimeters:
+            if not p.coords: continue
+            if concat_coords and Point(concat_coords[-1]).distance(Point(p.coords[0])) < TOLERANCE:
+                concat_coords.extend(list(p.coords)[1:])
+            else:
+                concat_coords.extend(list(p.coords))
+        if len(concat_coords) < 2:
+            return LineString(), main_proj.centroid, transformer_to_proj, transformer_to_deg
+        final_path = LineString(concat_coords)
+
+    return final_path, main_proj.centroid, transformer_to_proj, transformer_to_deg
