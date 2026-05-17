@@ -89,6 +89,20 @@ mkdir -p paths
 # Display the combined plan in a window:
 ../../show_plan.py paths/front-east.combined.plan &
 
+# Produce a squeezed version of the geofence path (for testing stitching):
+../../path_squeezer.py front-east_geofence.plan \
+    -o paths/front-east_geofence_squeezed.plan \
+    --segments $CIRCLE_SEGMENTS --sep $PATH_SEPARATION  --safe $PATH_SAFETY_MARGIN
+
+# Produce a combo plan with all geofences and the "squeezed" path:
+../../combine_plans.py -o paths/front-east_squeezed.combined.plan \
+    paths/front-east-feel_mission.plan \
+    front-east_geofence.plan \
+    paths/front-east_geofence_squeezed.plan \
+
+# Display the combined plan in a window:
+../../show_plan.py paths/front-east_squeezed.combined.plan &
+
 set +x
 
 echo

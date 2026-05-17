@@ -220,7 +220,48 @@ def stitch_path_segments_proj(ordered_tracks_proj, obstacle_tracks_proj):
              # Return what we have stitched so far
              return LineString(final_coords) if len(final_coords) >= 2 else None
              
+        # Minimize gap: rotate track_i_plus_1 so it starts at the vertex closest to end_i
         end_i = track_i.coords[-1]
+        try:
+            coords_next = list(track_i_plus_1.coords)
+            if not coords_next:
+                print(f"Error: Next track has empty coords at index {i+1}.")
+                return LineString(final_coords) if len(final_coords) >= 2 else None
+
+            def rotate_at(coords_list, idx):
+                return coords_list[idx:] + coords_list[:idx]
+
+            # Normal orientation
+            dists = [Point(end_i).distance(Point(c)) for c in coords_next]
+            idx_best = int(min(range(len(dists)), key=lambda k: dists[k]))
+            rotated_normal = rotate_at(coords_next, idx_best)
+
+            # Reversed orientation
+            rev_coords = coords_next[::-1]
+            dists_rev = [Point(end_i).distance(Point(c)) for c in rev_coords]
+            idx_best_rev = int(min(range(len(dists_rev)), key=lambda k: dists_rev[k]))
+            rotated_rev = rotate_at(rev_coords, idx_best_rev)
+
+            # Choose orientation with smaller connector distance
+            dist_normal = Point(end_i).distance(Point(rotated_normal[0]))
+            dist_rev = Point(end_i).distance(Point(rotated_rev[0]))
+            if dist_normal <= dist_rev:
+                chosen = rotated_normal
+                chosen_start_index = idx_best
+            else:
+                chosen = rotated_rev
+                chosen_start_index = len(coords_next) - 1 - idx_best_rev
+
+            # If closed loop with duplicated endpoints, drop final duplicate
+            if len(chosen) > 1 and Point(chosen[0]).distance(Point(chosen[-1])) < 1e-9:
+                chosen = chosen[:-1]
+
+            track_i_plus_1 = LineString(chosen)
+        except Exception as e:
+            print(f"Warning: Fallback to original ordering on error: {e}")
+            track_i_plus_1 = track_i_plus_1
+            chosen_start_index = 0
+
         start_i_plus_1 = track_i_plus_1.coords[0]
         # print(f"    Stitching gap between track {i} (ends {end_i}) and track {i+1} (starts {start_i_plus_1})") # Removed
         
@@ -245,7 +286,8 @@ def stitch_path_segments_proj(ordered_tracks_proj, obstacle_tracks_proj):
         if not bridge_coords:
             # Fallback: use direct straight-line bridge between end and start to continue stitching.
             # This may cross obstacles but allows generating a continuous path instead of failing.
-            print(f"Warning: Could not find bridge path between track {i} and {i+1}. Using straight-line fallback.")
+            print(f"Warning: Could not find bridge path between track {i} and {i+1} "
+                  f"(track {i} vertex {len(track_i.coords) - 1} to track {i+1} vertex {chosen_start_index}). Using straight-line fallback.")
             bridge_coords = [end_i, start_i_plus_1]
 
         coords_before_bridge_append = len(final_coords)
